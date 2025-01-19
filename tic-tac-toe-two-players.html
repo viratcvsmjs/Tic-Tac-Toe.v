@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe - Play with AI or Two Players</title>
+    <style>
+        /* General body and layout styles */
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #121417;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-top: 30px;
+            text-shadow: 0 0 10px #38bdf8;
+        }
+        
+        .game-mode {
+            margin-top: 20px;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin-top: 50px;
+            justify-content: center;
+        }
+        
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #1f2937;
+            border: 2px solid #38bdf8;
+            font-size: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .cell:hover {
+            background-color: #3b4c60;
+        }
+        
+        .winner-message {
+            margin-top: 30px;
+            font-size: 1.5rem;
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+        
+        .restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #38bdf8;
+            color: white;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            background-color: #ffcc00;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tic-Tac-Toe</h1>
+
+    <!-- Game Mode Selector -->
+    <div class="game-mode">
+        <button onclick="setGameMode('two-player')" class="restart-btn">Play Two Players</button>
+        <button onclick="setGameMode('ai')" class="restart-btn">Play with AI</button>
+    </div>
+
+    <div class="game-board" id="game-board">
+        <!-- Cells will be dynamically created here -->
+    </div>
+
+    <div class="winner-message" id="winner-message"></div>
+
+    <button class="restart-btn" onclick="restartGame()">Restart Game</button>
+
+    <script>
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let gameMode = 'two-player'; // Default to two-player mode
+        let playerName = ''; // Variable to store player name
+
+        // Set the game mode (AI or Two-Player)
+        function setGameMode(mode) {
+            gameMode = mode;
+            restartGame();
+        }
+
+        // Function to create the game board
+        function createBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = ''; // Clear existing cells
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        // Handle click on a cell
+        function handleCellClick(event) {
+            const index = event.target.getAttribute('data-index');
+            if (gameBoard[index] !== '' || !gameActive) return; // Skip if the cell is already filled or game is over
+
+            // Prompt the user for their name if it's the first click
+            if (!playerName) {
+                playerName = prompt("Please enter your name");
+                if (!playerName) {
+                    playerName = "Player";
+                }
+            }
+
+            // Fill the cell and update the game board
+            gameBoard[index] = currentPlayer;
+            event.target.innerText = currentPlayer;
+
+            // Check if there's a winner
+            if (checkWinner()) {
+                document.getElementById('winner-message').innerText = `${currentPlayer} Wins!`;
+                gameActive = false;
+                return;
+            }
+
+            // Change player (if in two-player mode)
+            if (gameMode === 'two-player') {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            } else if (gameMode === 'ai' && currentPlayer === 'X') {
+                currentPlayer = 'O'; // Switch to AI after human plays
+                aiMove(); // AI plays after user
+            }
+        }
+
+        // AI Move Logic (simple AI that picks the first empty spot)
+        function aiMove() {
+            const emptyCells = gameBoard
+                .map((value, index) => value === '' ? index : -1)
+                .filter(index => index !== -1);
+
+            if (emptyCells.length === 0) return;
+
+            const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            gameBoard[randomIndex] = 'O';
+
+            const cells = document.querySelectorAll('.cell');
+            cells[randomIndex].innerText = 'O';
+
+            if (checkWinner()) {
+                document.getElementById('winner-message').innerText = 'AI Wins!';
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = 'X'; // Switch back to player X after AI plays
+        }
+
+        // Check if there's a winner
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            for (let pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Restart the game
+        function restartGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            playerName = ''; // Reset player name
+            document.getElementById('winner-message').innerText = '';
+            createBoard();
+        }
+
+        // Initialize the game
+        createBoard();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Game</title>
+    <style>
+        /* General Body Styling */
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, #282c34, #121417);
+            color: #ffffff;
+            box-sizing: border-box;
+        }
+        /* Title Styling */
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8;
+            margin-bottom: 20px;
+            animation: titleGlow 2s infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            0% {
+                text-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8;
+            }
+            100% {
+                text-shadow: 0 0 15px #4fc3f7, 0 0 30px #4fc3f7;
+            }
+        }
+        /* Game Board */
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-gap: 15px;
+            margin-top: 20px;
+        }
+        /* Cell Styling */
+        
+        .cell {
+            width: 150px;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #38bdf8;
+            text-shadow: 0 0 5px #38bdf8;
+            transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .cell:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+        }
+        
+        .cell.taken {
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.3);
+            color: #94a3b8;
+            text-shadow: none;
+        }
+        /* Status Display */
+        
+        .status {
+            font-size: 1.8rem;
+            margin-top: 20px;
+            text-align: center;
+            color: #ffffff;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+        }
+        /* Restart Button */
+        
+        #restart {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            background: linear-gradient(45deg, #38bdf8, #1e40af);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, background 0.3s;
+        }
+        
+        #restart:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(45deg, #1e40af, #38bdf8);
+        }
+        
+        #restart:active {
+            transform: scale(0.95);
+        }
+        /* Background Animation */
+        
+        .background-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #4a4e69, #22223b);
+            clip-path: circle(30% at 20% 30%);
+            animation: morph 8s infinite;
+            z-index: -1;
+        }
+        
+        @keyframes morph {
+            0%,
+            100% {
+                clip-path: circle(30% at 20% 30%);
+            }
+            50% {
+                clip-path: circle(50% at 70% 70%);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(3, 100px);
+                grid-gap: 10px;
+            }
+            .cell {
+                width: 100px;
+                height: 100px;
+                font-size: 2rem;
+            }
+            #restart {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-animation"></div>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="game-board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <p class="status"></p>
+    <button id="restart">Restart Game</button>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.querySelector('.status');
+        const restartBtn = document.getElementById('restart');
+
+        let currentPlayer = 'X';
+        let gameState = ['', '', '', '', '', '', '', '', ''];
+        const winConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function handleClick(event) {
+            const cell = event.target;
+            const index = cell.getAttribute('data-index');
+
+            if (gameState[index] !== '' || checkWin()) return;
+
+            gameState[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add('taken');
+
+            if (checkWin()) {
+                statusText.textContent = `Player ${currentPlayer} Wins! 🎉`;
+                return;
+            }
+
+            if (gameState.every(value => value !== '')) {
+                statusText.textContent = `It's a Draw! 🤝`;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusText.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        function checkWin() {
+            return winConditions.some(condition => {
+                return condition.every(index => gameState[index] === currentPlayer);
+            });
+        }
+
+        function restartGame() {
+            gameState = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            statusText.textContent = `Player X's turn`;
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('taken');
+            });
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleClick));
+        restartBtn.addEventListener('click', restartGame);
+        statusText.textContent = `Player X's turn`;
+    </script>
+</body>
+
+</html>
